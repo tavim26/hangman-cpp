@@ -2,9 +2,11 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <sstream>
+#include <random>
+#include <algorithm>
+#include <cctype>
 #include <cstdlib>
-#include <ctime>
-#include <cstring>
 #include "hangman.h"
 
 using namespace std;
@@ -19,7 +21,7 @@ map<int, vector<string>> wordCategories = {
 };
 
 
-void showMenu() 
+void showMenu()
 {
     cout << "Welcome to the Hangman! " << endl;
     cout << "1 - Play!" << endl;
@@ -28,109 +30,168 @@ void showMenu()
     cout << "Choose your option: ";
 }
 
-void showDifficulty() 
+void showDifficulty()
 {
     cout << "Firstly, choose a difficulty level\n";
     cout << "1 - Easy\n";
     cout << "2 - Medium\n";
     cout << "3 - Hard\n";
+    cout << "Your choice: ";
 }
 
 void showCategories()
- {
+{
     cout << "Now, choose a category\n";
     cout << "1 - Cars\n";
     cout << "2 - Fruits\n";
     cout << "3 - Animals\n";
     cout << "4 - Countries\n";
     cout << "5 - Cities\n";
+    cout << "Your choice: ";
 }
 
-void showInstructions() 
+void showInstructions()
 {
     cout << "Instructions for the Hangman Game:\n";
-    cout << "The objective of the game is to guess the secret word before making a limited number of mistakes.\n";
-    cout << "Words may contain both uppercase and lowercase letters.\n";
-    cout << "\nDifficulty Levels:\n";
-    cout << "1. Easy: 10 attempts\n";
-    cout << "2. Medium: 6 attempts\n";
-    cout << "3. Hard: 3 attempts\n";
+    cout << "The objective of the game is to guess the secret word, one letter at a time,\n";
+    cout << "before making too many wrong guesses.\n";
+    cout << "Guesses are not case-sensitive, and repeating a letter costs nothing.\n";
+    cout << "\nDifficulty Levels (wrong guesses allowed):\n";
+    cout << "1. Easy: 10\n";
+    cout << "2. Medium: 6\n";
+    cout << "3. Hard: 3\n";
     cout << "After you choose the difficulty level, you may choose a category:\n";
     cout << "(cars, fruits, animals, countries, cities)\n";
     cout << "Have fun!\n";
 }
 
-vector<string> getWordsByCategory(int category) 
+// Reads a whole line from the keyboard. If the input stream is closed
+// (e.g. Ctrl+D), the program ends instead of looping forever.
+static string readLine()
 {
-    if (wordCategories.find(category) != wordCategories.end()) 
+    string line;
+    if (!getline(cin, line))
+    {
+        cout << endl << "Goodbye!" << endl;
+        exit(0);
+    }
+    return line;
+}
+
+int readNumber(int min, int max)
+{
+    while (true)
+    {
+        istringstream input(readLine());
+        int value;
+        char extra;
+
+        if (input >> value && !(input >> extra) && value >= min && value <= max)
+        {
+            return value;
+        }
+        cout << "Please enter a number between " << min << " and " << max << ": ";
+    }
+}
+
+char readLetter()
+{
+    while (true)
+    {
+        string line = readLine();
+
+        if (line.length() == 1 && isalpha(static_cast<unsigned char>(line[0])))
+        {
+            return static_cast<char>(tolower(static_cast<unsigned char>(line[0])));
+        }
+        cout << "Please enter a single letter: ";
+    }
+}
+
+vector<string> getWordsByCategory(int category)
+{
+    if (wordCategories.find(category) != wordCategories.end())
     {
         return wordCategories[category];
     }
     return {};
 }
 
-string selectRandomWord(const vector<string> &words) 
+string selectRandomWord(const vector<string> &words)
 {
-    if (!words.empty()) 
+    if (words.empty())
     {
-        srand(time(0)); 
-        int index = rand() % words.size();
-
-        return words[index];
+        return "";
     }
-    return "";
+
+    static mt19937 generator(random_device{}());
+    uniform_int_distribution<size_t> distribution(0, words.size() - 1);
+
+    return words[distribution(generator)];
 }
 
-void gameLogic(int difficulty, int category) 
+void gameLogic(int difficulty, int category)
 {
-    int nrOfTries;
-    
+    int triesLeft;
+
     switch (difficulty) {
-        case 1: nrOfTries = 10; break;
-        case 2: nrOfTries = 6; break;
-        case 3: nrOfTries = 3; break;
-        default: nrOfTries = 10; break; 
+        case 1: triesLeft = 10; break;
+        case 2: triesLeft = 6; break;
+        case 3: triesLeft = 3; break;
+        default: triesLeft = 10; break;
     }
 
-    char c;
     string word = selectRandomWord(getWordsByCategory(category));
     string templateWord(word.length(), '#');
-    vector<char> introducedCharacters;
+    vector<char> guessedLetters;
 
-    while (nrOfTries > 0) {
-        cout<<endl;
+    while (triesLeft > 0) {
+        cout << endl;
         cout << "Your word, so far: " << templateWord << endl;
-        cout << "Number of tries left: " << nrOfTries << endl;
-        cout << "Introduced characters: ";
-        for (char ch : introducedCharacters) 
+        cout << "Wrong guesses left: " << triesLeft << endl;
+        cout << "Guessed letters: ";
+        for (char ch : guessedLetters)
         {
             cout << ch << ' ';
         }
-        cout << "\nEnter a character: ";
-        
-        cin >> c;
-        introducedCharacters.push_back(c);
+        cout << "\nEnter a letter: ";
 
-        if (word.find(c) != string::npos) 
+        char guess = readLetter();
+
+        if (find(guessedLetters.begin(), guessedLetters.end(), guess) != guessedLetters.end())
         {
-            for (size_t i = 0; i < word.length(); ++i) 
+            cout << "You already tried '" << guess << "'. Try another letter." << endl;
+            continue;
+        }
+        guessedLetters.push_back(guess);
+
+        bool found = false;
+        for (size_t i = 0; i < word.length(); ++i)
+        {
+            if (tolower(static_cast<unsigned char>(word[i])) == guess)
             {
-                if (word[i] == c) 
-                {
-                    templateWord[i] = c;
-                }
+                templateWord[i] = word[i];
+                found = true;
             }
-        } 
-        --nrOfTries;
+        }
 
-        if (templateWord == word) 
+        if (found)
         {
-            cout <<endl<< "Congratulations! You've won the game!" << endl;
-            cout<<"The word was: "<<word<<endl<<endl;
+            cout << "Good guess!" << endl;
+        }
+        else
+        {
+            --triesLeft;
+            cout << "Wrong guess!" << endl;
+        }
+
+        if (templateWord == word)
+        {
+            cout << endl << "Congratulations! You've won the game!" << endl;
+            cout << "The word was: " << word << endl << endl;
             return;
         }
     }
 
-
-    cout <<endl<< "You lost! The correct word was: " << word << endl<< "Better luck next time!" << endl <<endl;
+    cout << endl << "You lost! The correct word was: " << word << endl << "Better luck next time!" << endl << endl;
 }

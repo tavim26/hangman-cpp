@@ -3,62 +3,38 @@
 
 using namespace std;
 
-int main() {
-    int difficulty;
-    int category;
-    int option;
-
-    while (true) 
+int main()
+{
+    while (true)
     {
         showMenu();
-        cin >> option;
+        int option = readNumber(1, 3);
 
-        switch (option) 
+        switch (option)
         {
             case 1:
-                
-                cout<<endl;
+            {
+                cout << endl;
                 showDifficulty();
-                cin >> difficulty;
-                cout<<endl;
+                int difficulty = readNumber(1, 3);
 
-                if (difficulty < 1 || difficulty > 3)
-                {
-                    cout << "Invalid difficulty level! Please choose again." << endl;
-                    continue; 
-                }
-
-                cout<<endl;
+                cout << endl;
                 showCategories();
-                cin >> category;
-                cout<<endl;
-
-                if (category < 1 || category > 5)
-                 {
-                    cout << "Invalid category! Please choose again." << endl;
-                    continue; 
-                }
+                int category = readNumber(1, 5);
 
                 gameLogic(difficulty, category);
-                break; 
+                break;
+            }
 
             case 2:
-
+                cout << endl;
                 showInstructions();
-                cout<<endl;
-                break; 
+                cout << endl;
+                break;
 
             case 3:
-
                 cout << "Goodbye!" << endl;
-                exit(0); 
-
-            default:
-            
-                cout << "Invalid option! Please choose 1, 2, or 3." << endl;
-                break; 
+                return 0;
         }
     }
-
-    return 0;
 }
