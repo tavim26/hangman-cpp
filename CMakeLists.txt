@@ -7,7 +7,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(hangman
     src/main.cpp
-    src/hangman.cpp
+    src/game.cpp
+    src/words.cpp
+    src/console.cpp
 )
 
 target_include_directories(hangman PRIVATE include)

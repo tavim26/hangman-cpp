@@ -1,39 +1,27 @@
 #include <iostream>
-#include "hangman.h"
 
-using namespace std;
+#include "console.h"
 
 int main()
 {
     while (true)
     {
-        showMenu();
-        int option = readNumber(1, 3);
-
-        switch (option)
+        switch (askMenuOption())
         {
-            case 1:
+            case MenuOption::Play:
             {
-                cout << endl;
-                showDifficulty();
-                int difficulty = readNumber(1, 3);
-
-                cout << endl;
-                showCategories();
-                int category = readNumber(1, 5);
-
-                gameLogic(difficulty, category);
+                const Difficulty& difficulty = askDifficulty();
+                const Category& category = askCategory();
+                playRound(difficulty, category);
                 break;
             }
 
-            case 2:
-                cout << endl;
+            case MenuOption::Instructions:
                 showInstructions();
-                cout << endl;
                 break;
 
-            case 3:
-                cout << "Goodbye!" << endl;
+            case MenuOption::Exit:
+                std::cout << "Goodbye!\n";
                 return 0;
         }
     }
